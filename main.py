@@ -1,3 +1,5 @@
+from os import listdir
+from os.path import isfile, join
 from flask import Flask, render_template, request, url_for, Markup
 import pandas as pd
 import numpy as np
@@ -70,21 +72,22 @@ def interact_life_expectancy():
                                                 sex=selected_sex)
 
         if (current_time_left is not None):
-            format_str = f"You have {np.ceil(current_time_left)} healthy years left to live"
+            format_str = f"You have {int(np.ceil(current_time_left))} healthy years left to live"
             string_to_print = Markup(format_str)
         else:
             string_to_print = Markup("Error! No data found for selected parameters")
             current_time_left = 1
 
+        images = [f for f in listdir('static/images') if isfile(join('static/images', f))]
         healthy_image_list = []
         healthy_years_left = int(np.ceil(current_time_left))
         image_switch = 0
         if (healthy_years_left > 0):
             for y in range(healthy_years_left):
-                if image_switch == 0:
-                    healthy_image_list.append('static/images')
-                else:
-                    image_switch += 1
+                if image_switch >= len(images):
+                    image_switch = 0
+                healthy_image_list.append(f"/static/images/{images[image_switch]}")
+                image_switch += 1
 
     return render_template('life.html', country_list=country_list,
                            default_country=selected_country,
