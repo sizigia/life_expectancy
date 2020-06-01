@@ -17,8 +17,10 @@ app.logger.info(BASE_DIR)
 
 src = os.path.join(BASE_DIR, 'WHOSIS_000001,WHOSIS_000015.csv')
 who_list = pd.read_csv(src)
-who_list = who_list[['GHO (DISPLAY)', 'YEAR (CODE)', 'COUNTRY (DISPLAY)', 'SEX (DISPLAY)', 'Numeric']]
-who_list['COUNTRY (DISPLAY)'] = [country.title() for country in who_list['COUNTRY (DISPLAY)'].values]
+who_list = who_list[['GHO (DISPLAY)', 'YEAR (CODE)',
+                     'COUNTRY (DISPLAY)', 'SEX (DISPLAY)', 'Numeric']]
+who_list['COUNTRY (DISPLAY)'] = [country.title()
+                                 for country in who_list['COUNTRY (DISPLAY)'].values]
 country_list = sorted(set(who_list['COUNTRY (DISPLAY)'].values))
 
 
@@ -27,16 +29,24 @@ def get_life_expectancy(age, country, sex):
         country, na=False)]
     sub_set = sub_set[sub_set['SEX (DISPLAY)'] == sex]
     sub_set = sub_set.sort_values('YEAR (CODE)', ascending=False)
-    sub_set_birth = sub_set[sub_set['GHO (DISPLAY)'] == 'Life expectancy at birth (years)']
-    sub_set_60 = sub_set[sub_set['GHO (DISPLAY)'] == 'Life expectancy at age 60 (years)']
+    sub_set_birth = sub_set[sub_set['GHO (DISPLAY)']
+                            == 'Life expectancy at birth (years)']
+    sub_set_60 = sub_set[sub_set['GHO (DISPLAY)']
+                         == 'Life expectancy at age 60 (years)']
 
     if len(sub_set_birth['Numeric']) > 0 and len(sub_set_60['Numeric']) > 0:
         lf_at_birth = sub_set_birth['Numeric'].values[0]
         lf_at_60 = sub_set_60['Numeric'].values[0]
 
-        slope, intercept, r_value, p_value, std_err = stats.linregress([0, 60], [lf_at_birth, lf_at_60])
+        slope, intercept, r_value, p_value, std_err = stats.linregress(
+            [0, 60], [lf_at_birth, lf_at_60])
 
-        return (np.ceil(slope * age + intercept))
+        calc_age = (np.ceil(slope * age + intercept))
+
+        if calc_age > 0:
+            return calc_age
+        elif calc_age <= 0:
+            return 0
     else:
         return None
 
@@ -72,13 +82,18 @@ def interact_life_expectancy():
                                                 sex=selected_sex)
 
         if (current_time_left is not None):
-            format_str = f"You have {int(np.ceil(current_time_left))} healthy years left to live"
+            if current_time_left > 0:
+                format_str = f"You have {current_time_left} healthy years left to live"
+            else:
+                format_str = f"You are a living legend!"
             string_to_print = Markup(format_str)
         else:
-            string_to_print = Markup("Error! No data found for selected parameters")
+            string_to_print = Markup(
+                "Error! No data found for selected parameters")
             current_time_left = 1
 
-        images = [f for f in listdir('static/images') if isfile(join('static/images', f))]
+        images = [f for f in listdir(
+            'static/images') if isfile(join('static/images', f))]
         healthy_image_list = []
         healthy_years_left = int(np.ceil(current_time_left))
         image_switch = 0
@@ -86,7 +101,8 @@ def interact_life_expectancy():
             for y in range(healthy_years_left):
                 if image_switch >= len(images):
                     image_switch = 0
-                healthy_image_list.append(f"/static/images/{images[image_switch]}")
+                healthy_image_list.append(
+                    f"/static/images/{images[image_switch]}")
                 image_switch += 1
 
     return render_template('life.html', country_list=country_list,
